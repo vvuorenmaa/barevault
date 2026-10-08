@@ -55,6 +55,12 @@ describe("what the hero sees", () => {
     expect(isTileExplored(world, 4, 1)).toBe(false);
   });
 
+  it("rejects an invalid sight radius", () => {
+    const grid = createGridFromRows(["###", "#.#", "###"]);
+    expect(() => createWorld(grid, { column: 1, row: 1 }, -1)).toThrow(RangeError);
+    expect(() => createWorld(grid, { column: 1, row: 1 }, 2.5)).toThrow(RangeError);
+  });
+
   it("rejects reading outside the grid", () => {
     expect(() => isTileVisible(createLongCorridorWorld(), 99, 0)).toThrow(RangeError);
     expect(() => isTileExplored(createLongCorridorWorld(), 0, 99)).toThrow(RangeError);

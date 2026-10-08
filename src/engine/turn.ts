@@ -1,5 +1,5 @@
 import { computeFieldOfView } from "./fieldOfView";
-import { getTile, isInsideGrid, type Grid, type TilePosition } from "./grid";
+import { getTile, isInsideGrid, toTileIndex, type Grid, type TilePosition } from "./grid";
 
 export type Direction = "up" | "down" | "left" | "right";
 
@@ -30,7 +30,7 @@ function updateVision(world: World): World {
   const visibleTiles = world.grid.tiles.map(() => false);
   const exploredTiles = [...world.exploredTiles];
   for (const { column, row } of computeFieldOfView(world.grid, world.hero, world.sightRadius)) {
-    const tileIndex = row * world.grid.columnCount + column;
+    const tileIndex = toTileIndex(world.grid, column, row);
     visibleTiles[tileIndex] = true;
     exploredTiles[tileIndex] = true;
   }
@@ -53,10 +53,7 @@ export function createWorld(
 }
 
 function readTileFlag(world: World, flags: readonly boolean[], column: number, row: number): boolean {
-  if (!isInsideGrid(world.grid, column, row)) {
-    throw new RangeError(`Tile (${column}, ${row}) is outside the grid`);
-  }
-  return flags[row * world.grid.columnCount + column] === true;
+  return flags[toTileIndex(world.grid, column, row)] === true;
 }
 
 export function isTileVisible(world: World, column: number, row: number): boolean {

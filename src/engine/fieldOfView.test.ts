@@ -41,6 +41,11 @@ describe("computeFieldOfView", () => {
     expect(isVisible(visibleTiles, 2, 2)).toBe(false);
   });
 
+  it("sees only its own tile with radius 0", () => {
+    const grid = createGridFromRows(["...", "...", "..."]);
+    expect(computeFieldOfView(grid, { column: 1, row: 1 }, 0)).toEqual([{ column: 1, row: 1 }]);
+  });
+
   it("does not report tiles outside the grid", () => {
     const grid = createGridFromRows(["..", ".."]);
     const visibleTiles = computeFieldOfView(grid, { column: 0, row: 0 }, 10);
