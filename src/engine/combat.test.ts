@@ -73,6 +73,34 @@ describe("enemies attacking", () => {
   });
 });
 
+describe("a whole fight", () => {
+  it("can be won by a bare-handed hero against one enemy, at a cost", () => {
+    let world = createCorridorWorld([ENEMY_STARTING_HIT_POINTS], [6]);
+    for (let turn = 0; turn < 50 && world.enemies.length > 0 && !isHeroDead(world); turn += 1) {
+      world = playTurn(world, "right", [enemiesTurn]).world;
+    }
+    expect(world.enemies).toEqual([]);
+    expect(isHeroDead(world)).toBe(false);
+    expect(world.heroHitPoints).toBeLessThan(HERO_STARTING_HIT_POINTS);
+  });
+
+  it("is lost by a hero who never fights back", () => {
+    let world = createCorridorWorld([ENEMY_STARTING_HIT_POINTS], [2]);
+    for (let turn = 0; turn < 50 && !isHeroDead(world); turn += 1) {
+      // Running only the enemy phase stands in for a hero who takes hits without answering
+      world = enemiesTurn(world);
+    }
+    expect(isHeroDead(world)).toBe(true);
+  });
+
+  it("keeps the previous world untouched when the hero attacks", () => {
+    const world = createCorridorWorld([ENEMY_STARTING_HIT_POINTS], [2]);
+    playTurn(world, "right", [enemiesTurn]);
+    expect(world.enemies).toEqual([{ position: { column: 2, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS }]);
+    expect(world.heroHitPoints).toBe(HERO_STARTING_HIT_POINTS);
+  });
+});
+
 describe("the hero dying", () => {
   function createWorldWithHeroHitPoints(heroHitPoints: number): World {
     return createWorld(createGridFromRows(OPEN_ROOM), { column: 2, row: 2 }, {
@@ -91,6 +119,17 @@ describe("the hero dying", () => {
     const after = enemiesTurn(world);
     expect(after.heroHitPoints).toBe(0);
     expect(isHeroDead(after)).toBe(true);
+  });
+
+  it("never goes below zero hit points even when several enemies strike at once", () => {
+    const world = createWorld(createGridFromRows(OPEN_ROOM), { column: 2, row: 2 }, {
+      heroHitPoints: 1,
+      enemies: [
+        { position: { column: 1, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS },
+        { position: { column: 3, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS },
+      ],
+    });
+    expect(enemiesTurn(world).heroHitPoints).toBe(0);
   });
 
   it("ends the run: a dead hero cannot act and nobody else acts either", () => {
