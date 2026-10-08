@@ -1,3 +1,4 @@
+import { HERO_ATTACK_DAMAGE, HERO_STARTING_HIT_POINTS } from "./combat";
 import { computeFieldOfView } from "./fieldOfView";
 import { getTile, isInsideGrid, toTileIndex, type Grid, type TilePosition } from "./grid";
 
@@ -5,11 +6,13 @@ export type Direction = "up" | "down" | "left" | "right";
 
 export interface Enemy {
   readonly position: TilePosition;
+  readonly hitPoints: number;
 }
 
 export interface World {
   readonly grid: Grid;
   readonly hero: TilePosition;
+  readonly heroHitPoints: number;
   readonly enemies: readonly Enemy[];
   readonly sightRadius: number;
   // One flag per grid tile, in the same order as the grid's tiles
@@ -45,14 +48,20 @@ function updateVision(world: World): World {
 export interface WorldOptions {
   readonly sightRadius?: number;
   readonly enemies?: readonly Enemy[];
+  readonly heroHitPoints?: number;
 }
 
 export function createWorld(grid: Grid, hero: TilePosition, options: WorldOptions = {}): World {
-  const { sightRadius = DEFAULT_SIGHT_RADIUS, enemies = [] } = options;
+  const {
+    sightRadius = DEFAULT_SIGHT_RADIUS,
+    enemies = [],
+    heroHitPoints = HERO_STARTING_HIT_POINTS,
+  } = options;
   const unseenTiles = grid.tiles.map(() => false);
   return updateVision({
     grid,
     hero,
+    heroHitPoints,
     enemies,
     sightRadius,
     visibleTiles: unseenTiles,
@@ -79,29 +88,57 @@ function isWalkable(grid: Grid, position: TilePosition): boolean {
 // Behaviour is passed in rather than stored in the world, which keeps the world plain data (ADR-0002)
 export type ActorTurn = (world: World) => World;
 
-// A turn is only spent when the hero actually moves; bumping into a wall costs nothing
-export function playTurn(
-  world: World,
-  direction: Direction,
-  otherActors: readonly ActorTurn[],
-): TurnResult {
+function attackEnemy(world: World, targetIndex: number): World {
+  const survivingEnemies = world.enemies
+    .map((enemy, index) =>
+      index === targetIndex ? { ...enemy, hitPoints: enemy.hitPoints - HERO_ATTACK_DAMAGE } : enemy,
+    )
+    .filter((enemy) => enemy.hitPoints > 0);
+  return { ...world, enemies: survivingEnemies };
+}
+
+// Returns the world after the hero's own action, or undefined when the action costs no turn
+function performHeroAction(world: World, direction: Direction): World | undefined {
   const offset = OFFSET_BY_DIRECTION[direction];
   const destination: TilePosition = {
     column: world.hero.column + offset.column,
     row: world.hero.row + offset.row,
   };
-  // Until the hero can attack, an enemy's tile is simply blocked
-  const isOccupiedByEnemy = world.enemies.some(
+
+  const targetIndex = world.enemies.findIndex(
     (enemy) => enemy.position.column === destination.column && enemy.position.row === destination.row,
   );
-  if (!isWalkable(world.grid, destination) || isOccupiedByEnemy) {
+  if (targetIndex !== -1) {
+    return attackEnemy(world, targetIndex);
+  }
+  if (!isWalkable(world.grid, destination)) {
+    return undefined;
+  }
+  return updateVision({ ...world, hero: destination });
+}
+
+export function isHeroDead(world: World): boolean {
+  return world.heroHitPoints <= 0;
+}
+
+// A turn is only spent when the hero moves or attacks; bumping into a wall costs nothing,
+// and once the hero is dead the run is over, so nothing happens any more
+export function playTurn(
+  world: World,
+  direction: Direction,
+  otherActors: readonly ActorTurn[],
+): TurnResult {
+  if (isHeroDead(world)) {
+    return { world, turnTaken: false };
+  }
+  const worldAfterHeroActed = performHeroAction(world, direction);
+  if (worldAfterHeroActed === undefined) {
     return { world, turnTaken: false };
   }
 
-  const worldAfterHeroMoved = updateVision({ ...world, hero: destination });
   const worldAfterAllActors = otherActors.reduce(
     (currentWorld, takeActorTurn) => takeActorTurn(currentWorld),
-    worldAfterHeroMoved,
+    worldAfterHeroActed,
   );
   return { world: worldAfterAllActors, turnTaken: true };
 }

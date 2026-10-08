@@ -1,7 +1,9 @@
 import { calculateCanvasPixelSize } from "../engine/canvasSize";
 import { findEnemyStartPosition, findRoomCenter, generateDungeon } from "../engine/dungeon";
-import { chaseHeroTurn } from "../engine/enemy";
+import { ENEMY_STARTING_HIT_POINTS } from "../engine/combat";
+import { enemiesTurn } from "../engine/enemy";
 import { createWorld, playTurn, type World } from "../engine/turn";
+import { describeHeroStatus } from "./heroStatus";
 import { findDirectionForKey } from "./keyboardInput";
 import { renderEnemies } from "./renderEnemies";
 import { renderGrid } from "./renderGrid";
@@ -29,7 +31,10 @@ function createStartingWorld(): World {
     throw new Error("The generated dungeon has no room to start in");
   }
   const enemyStartPosition = findEnemyStartPosition(rooms);
-  const enemies = enemyStartPosition === undefined ? [] : [{ position: enemyStartPosition }];
+  const enemies =
+    enemyStartPosition === undefined
+      ? []
+      : [{ position: enemyStartPosition, hitPoints: ENEMY_STARTING_HIT_POINTS }];
   return createWorld(grid, findRoomCenter(startingRoom), { enemies });
 }
 
@@ -41,6 +46,10 @@ function mountGame(): void {
   const drawingContext = canvasElement.getContext("2d");
   if (!drawingContext) {
     throw new Error("2D canvas context is not available");
+  }
+  const heroStatusElement = document.querySelector<HTMLElement>("#hero-status");
+  if (!heroStatusElement) {
+    throw new Error("Status element #hero-status not found");
   }
 
   let world = createStartingWorld();
@@ -60,6 +69,7 @@ function mountGame(): void {
     renderGrid(drawingContext, world, TILE_SIZE_IN_PIXELS);
     renderEnemies(drawingContext, world, TILE_SIZE_IN_PIXELS);
     renderHero(drawingContext, world.hero, TILE_SIZE_IN_PIXELS);
+    heroStatusElement.textContent = describeHeroStatus(world);
   };
 
   window.addEventListener("keydown", (keyboardEvent) => {
@@ -69,7 +79,7 @@ function mountGame(): void {
     }
     // Arrow keys would otherwise scroll the page
     keyboardEvent.preventDefault();
-    const turnResult = playTurn(world, direction, [chaseHeroTurn]);
+    const turnResult = playTurn(world, direction, [enemiesTurn]);
     if (!turnResult.turnTaken) {
       return;
     }
