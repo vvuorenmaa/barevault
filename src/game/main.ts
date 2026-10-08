@@ -1,11 +1,19 @@
 import { calculateCanvasPixelSize } from "../engine/canvasSize";
+import { generateDungeon } from "../engine/dungeon";
 import { renderGrid } from "./renderGrid";
-import { createSampleLevel } from "./sampleLevel";
 
 const TILE_SIZE_IN_PIXELS = 16;
-const CANVAS_SCALE = 3;
+const CANVAS_SCALE = 2;
+const DUNGEON_COLUMN_COUNT = 40;
+const DUNGEON_ROW_COUNT = 25;
+const DEFAULT_SEED = "bare-vault";
 
-function mountSampleLevel(): void {
+function readSeedFromUrl(): string {
+  const seedParameter = new URLSearchParams(window.location.search).get("seed");
+  return seedParameter === null || seedParameter === "" ? DEFAULT_SEED : seedParameter;
+}
+
+function mountDungeon(): void {
   const canvasElement = document.querySelector<HTMLCanvasElement>("#game-canvas");
   if (!canvasElement) {
     throw new Error("Canvas element #game-canvas not found");
@@ -15,10 +23,14 @@ function mountSampleLevel(): void {
     throw new Error("2D canvas context is not available");
   }
 
-  const level = createSampleLevel();
+  const { grid } = generateDungeon({
+    seed: readSeedFromUrl(),
+    columnCount: DUNGEON_COLUMN_COUNT,
+    rowCount: DUNGEON_ROW_COUNT,
+  });
   const { width, height } = calculateCanvasPixelSize(
-    level.columnCount,
-    level.rowCount,
+    grid.columnCount,
+    grid.rowCount,
     TILE_SIZE_IN_PIXELS,
   );
   canvasElement.width = width;
@@ -27,7 +39,7 @@ function mountSampleLevel(): void {
   canvasElement.style.width = `${width * CANVAS_SCALE}px`;
   canvasElement.style.height = `${height * CANVAS_SCALE}px`;
 
-  renderGrid(drawingContext, level, TILE_SIZE_IN_PIXELS);
+  renderGrid(drawingContext, grid, TILE_SIZE_IN_PIXELS);
 }
 
-mountSampleLevel();
+mountDungeon();
