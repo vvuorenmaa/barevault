@@ -27,11 +27,13 @@ describe("playTurn other actors", () => {
 
   it("passes each actor the world left by the previous one", () => {
     const pushHeroBack: ActorTurn = (world) => ({ ...world, hero: { column: 1, row: 1 } });
+    const observedHeroPositions: unknown[] = [];
     const observer: ActorTurn = (world) => {
-      expect(world.hero).toEqual({ column: 1, row: 1 });
+      observedHeroPositions.push(world.hero);
       return world;
     };
     const result = playTurn(createCorridorWorld(), "right", [pushHeroBack, observer]);
+    expect(observedHeroPositions).toEqual([{ column: 1, row: 1 }]);
     expect(result.world.hero).toEqual({ column: 1, row: 1 });
   });
 

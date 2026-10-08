@@ -1,6 +1,7 @@
 import { calculateCanvasPixelSize } from "../engine/canvasSize";
 import { findRoomCenter, generateDungeon } from "../engine/dungeon";
-import { createWorld, playTurn, type Direction, type World } from "../engine/turn";
+import { createWorld, playTurn, type World } from "../engine/turn";
+import { findDirectionForKey } from "./keyboardInput";
 import { renderGrid } from "./renderGrid";
 import { renderHero } from "./renderHero";
 
@@ -9,13 +10,6 @@ const CANVAS_SCALE = 2;
 const DUNGEON_COLUMN_COUNT = 40;
 const DUNGEON_ROW_COUNT = 25;
 const DEFAULT_SEED = "bare-vault";
-
-const DIRECTION_BY_KEY: Readonly<Record<string, Direction>> = {
-  ArrowUp: "up",
-  ArrowDown: "down",
-  ArrowLeft: "left",
-  ArrowRight: "right",
-};
 
 function readSeedFromUrl(): string {
   const seedParameter = new URLSearchParams(window.location.search).get("seed");
@@ -64,7 +58,7 @@ function mountGame(): void {
   };
 
   window.addEventListener("keydown", (keyboardEvent) => {
-    const direction = DIRECTION_BY_KEY[keyboardEvent.key];
+    const direction = findDirectionForKey(keyboardEvent);
     if (direction === undefined) {
       return;
     }
