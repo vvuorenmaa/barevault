@@ -57,10 +57,11 @@ function mountGame(): void {
   canvasElement.style.width = `${width * CANVAS_SCALE}px`;
   canvasElement.style.height = `${height * CANVAS_SCALE}px`;
 
-  function render(): void {
+  // An arrow function keeps the null check on drawingContext in scope, unlike a hoisted declaration
+  const render = (): void => {
     renderGrid(drawingContext, world.grid, TILE_SIZE_IN_PIXELS);
     renderHero(drawingContext, world.hero, TILE_SIZE_IN_PIXELS);
-  }
+  };
 
   window.addEventListener("keydown", (keyboardEvent) => {
     const direction = DIRECTION_BY_KEY[keyboardEvent.key];
