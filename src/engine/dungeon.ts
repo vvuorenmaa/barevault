@@ -1,4 +1,4 @@
-import { createGrid, setTile, type Grid } from "./grid";
+import { createGrid, setTile, type Grid, type TilePosition } from "./grid";
 import { createRandomGenerator, type RandomGenerator } from "./randomGenerator";
 
 export interface Room {
@@ -60,12 +60,7 @@ function carveRoom(grid: Grid, room: Room): void {
   }
 }
 
-interface TilePosition {
-  readonly column: number;
-  readonly row: number;
-}
-
-function findRoomCenter(room: Room): TilePosition {
+export function findRoomCenter(room: Room): TilePosition {
   return {
     column: room.column + Math.floor(room.width / 2),
     row: room.row + Math.floor(room.height / 2),

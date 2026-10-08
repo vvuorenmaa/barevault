@@ -1,5 +1,10 @@
 export type TileKind = "wall" | "floor";
 
+export interface TilePosition {
+  readonly column: number;
+  readonly row: number;
+}
+
 // Plain data so a grid can be serialized as-is (ADR-0002)
 export interface Grid {
   readonly columnCount: number;
