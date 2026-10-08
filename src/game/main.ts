@@ -1,6 +1,9 @@
 import { calculateCanvasPixelSize } from "../engine/canvasSize";
-import { generateDungeon } from "../engine/dungeon";
+import { findRoomCenter, generateDungeon } from "../engine/dungeon";
+import { createWorld, playTurn, type World } from "../engine/turn";
+import { findDirectionForKey } from "./keyboardInput";
 import { renderGrid } from "./renderGrid";
+import { renderHero } from "./renderHero";
 
 const TILE_SIZE_IN_PIXELS = 16;
 const CANVAS_SCALE = 2;
@@ -13,7 +16,20 @@ function readSeedFromUrl(): string {
   return seedParameter === null || seedParameter === "" ? DEFAULT_SEED : seedParameter;
 }
 
-function mountDungeon(): void {
+function createStartingWorld(): World {
+  const { grid, rooms } = generateDungeon({
+    seed: readSeedFromUrl(),
+    columnCount: DUNGEON_COLUMN_COUNT,
+    rowCount: DUNGEON_ROW_COUNT,
+  });
+  const [startingRoom] = rooms;
+  if (startingRoom === undefined) {
+    throw new Error("The generated dungeon has no room to start in");
+  }
+  return createWorld(grid, findRoomCenter(startingRoom));
+}
+
+function mountGame(): void {
   const canvasElement = document.querySelector<HTMLCanvasElement>("#game-canvas");
   if (!canvasElement) {
     throw new Error("Canvas element #game-canvas not found");
@@ -23,14 +39,10 @@ function mountDungeon(): void {
     throw new Error("2D canvas context is not available");
   }
 
-  const { grid } = generateDungeon({
-    seed: readSeedFromUrl(),
-    columnCount: DUNGEON_COLUMN_COUNT,
-    rowCount: DUNGEON_ROW_COUNT,
-  });
+  let world = createStartingWorld();
   const { width, height } = calculateCanvasPixelSize(
-    grid.columnCount,
-    grid.rowCount,
+    world.grid.columnCount,
+    world.grid.rowCount,
     TILE_SIZE_IN_PIXELS,
   );
   canvasElement.width = width;
@@ -39,7 +51,28 @@ function mountDungeon(): void {
   canvasElement.style.width = `${width * CANVAS_SCALE}px`;
   canvasElement.style.height = `${height * CANVAS_SCALE}px`;
 
-  renderGrid(drawingContext, grid, TILE_SIZE_IN_PIXELS);
+  // An arrow function keeps the null check on drawingContext in scope, unlike a hoisted declaration
+  const render = (): void => {
+    renderGrid(drawingContext, world.grid, TILE_SIZE_IN_PIXELS);
+    renderHero(drawingContext, world.hero, TILE_SIZE_IN_PIXELS);
+  };
+
+  window.addEventListener("keydown", (keyboardEvent) => {
+    const direction = findDirectionForKey(keyboardEvent);
+    if (direction === undefined) {
+      return;
+    }
+    // Arrow keys would otherwise scroll the page
+    keyboardEvent.preventDefault();
+    const turnResult = playTurn(world, direction, []);
+    if (!turnResult.turnTaken) {
+      return;
+    }
+    world = turnResult.world;
+    render();
+  });
+
+  render();
 }
 
-mountDungeon();
+mountGame();
