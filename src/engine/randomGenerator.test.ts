@@ -62,6 +62,38 @@ describe("createRandomGenerator", () => {
     ]);
   });
 
+  it("treats a numeric seed and its string form as the same seed", () => {
+    // The seed arrives as a string from the URL, so 1 and "1" must agree
+    expect(drawFloats(1, 10)).toEqual(drawFloats("1", 10));
+  });
+
+  it("exposes its state as plain data without advancing the sequence", () => {
+    const generator = createRandomGenerator("peek");
+    const stateBefore = generator.getState();
+    expect(stateBefore).toEqual({ state: expect.any(Number) });
+    expect(generator.getState()).toEqual(stateBefore);
+  });
+
+  it.each([
+    [{ state: Number.NaN }],
+    [{ state: -1 }],
+    [{ state: 1.5 }],
+    [{ state: 2 ** 32 }],
+    [{ state: 1e300 }],
+    [{}],
+    [null],
+    ["not-a-state"],
+  ])("refuses to restore from an invalid saved state (%j)", (savedState) => {
+    expect(() => restoreRandomGenerator(savedState)).toThrow(RangeError);
+  });
+
+  it("rejects integer ranges that are unsafe or wider than the 32-bit source can cover", () => {
+    const generator = createRandomGenerator("wide");
+    expect(() => generator.nextIntegerInRange(0, 2 ** 53)).toThrow(RangeError);
+    expect(() => generator.nextIntegerInRange(0, 2 ** 32)).toThrow(RangeError);
+    expect(() => generator.nextIntegerInRange(0, 2 ** 32 - 1)).not.toThrow();
+  });
+
   it("continues the same sequence after its state is saved as JSON and restored", () => {
     const original = createRandomGenerator("save-me");
     original.nextFloat();

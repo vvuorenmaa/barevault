@@ -9,6 +9,9 @@ export interface RandomGenerator {
   getState(): RandomGeneratorState;
 }
 
+const MAX_UNSIGNED_32 = 0xffffffff;
+const MAX_RANGE_SPAN = MAX_UNSIGNED_32 + 1;
+
 // FNV-1a: spreads similar strings ("abc", "abd") over unrelated 32-bit states
 function hashSeedToUnsigned32(seed: string | number): number {
   let hash = 0x811c9dc5;
@@ -32,8 +35,12 @@ function createGeneratorFromState(initialState: number): RandomGenerator {
   }
 
   function nextIntegerInRange(minimum: number, maximum: number): number {
-    if (!Number.isInteger(minimum) || !Number.isInteger(maximum) || minimum > maximum) {
-      throw new RangeError("Range must be two integers with minimum <= maximum");
+    if (!Number.isSafeInteger(minimum) || !Number.isSafeInteger(maximum) || minimum > maximum) {
+      throw new RangeError("Range must be two safe integers with minimum <= maximum");
+    }
+    // The source has 32 bits of entropy, so a wider span would silently skip values
+    if (maximum - minimum + 1 > MAX_RANGE_SPAN) {
+      throw new RangeError("Range spans more values than the 32-bit source can cover");
     }
     return minimum + Math.floor(nextFloat() * (maximum - minimum + 1));
   }
@@ -45,6 +52,7 @@ function createGeneratorFromState(initialState: number): RandomGenerator {
       if (items.length === 0) {
         throw new RangeError("Cannot pick from an empty list");
       }
+      // The index is always within bounds; the cast keeps lists that contain undefined valid
       return items[nextIntegerInRange(0, items.length - 1)] as Item;
     },
     getState: () => ({ state }),
@@ -55,9 +63,18 @@ export function createRandomGenerator(seed: string | number): RandomGenerator {
   return createGeneratorFromState(hashSeedToUnsigned32(seed));
 }
 
-export function restoreRandomGenerator(savedState: RandomGeneratorState): RandomGenerator {
-  if (!Number.isInteger(savedState.state)) {
-    throw new RangeError("Saved random generator state must be an integer");
+function isValidSavedState(savedState: unknown): savedState is RandomGeneratorState {
+  if (typeof savedState !== "object" || savedState === null) {
+    return false;
+  }
+  const { state } = savedState as { state?: unknown };
+  return typeof state === "number" && Number.isInteger(state) && state >= 0 && state <= MAX_UNSIGNED_32;
+}
+
+// Saved state comes from JSON, so it is untrusted input
+export function restoreRandomGenerator(savedState: unknown): RandomGenerator {
+  if (!isValidSavedState(savedState)) {
+    throw new RangeError("Saved random generator state must be { state: unsigned 32-bit integer }");
   }
   return createGeneratorFromState(savedState.state);
 }
