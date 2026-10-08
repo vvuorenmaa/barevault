@@ -1,11 +1,11 @@
 import { calculateCanvasPixelSize } from "../engine/canvasSize";
+import { renderGrid } from "./renderGrid";
+import { createSampleLevel } from "./sampleLevel";
 
-const GRID_COLUMN_COUNT = 40;
-const GRID_ROW_COUNT = 25;
 const TILE_SIZE_IN_PIXELS = 16;
-const CANVAS_SCALE = 2;
+const CANVAS_SCALE = 3;
 
-function mountEmptyCanvas(): void {
+function mountSampleLevel(): void {
   const canvasElement = document.querySelector<HTMLCanvasElement>("#game-canvas");
   if (!canvasElement) {
     throw new Error("Canvas element #game-canvas not found");
@@ -15,9 +15,10 @@ function mountEmptyCanvas(): void {
     throw new Error("2D canvas context is not available");
   }
 
+  const level = createSampleLevel();
   const { width, height } = calculateCanvasPixelSize(
-    GRID_COLUMN_COUNT,
-    GRID_ROW_COUNT,
+    level.columnCount,
+    level.rowCount,
     TILE_SIZE_IN_PIXELS,
   );
   canvasElement.width = width;
@@ -26,8 +27,7 @@ function mountEmptyCanvas(): void {
   canvasElement.style.width = `${width * CANVAS_SCALE}px`;
   canvasElement.style.height = `${height * CANVAS_SCALE}px`;
 
-  drawingContext.fillStyle = "#000";
-  drawingContext.fillRect(0, 0, width, height);
+  renderGrid(drawingContext, level, TILE_SIZE_IN_PIXELS);
 }
 
-mountEmptyCanvas();
+mountSampleLevel();
