@@ -1,7 +1,9 @@
 import { calculateCanvasPixelSize } from "../engine/canvasSize";
-import { findRoomCenter, generateDungeon } from "../engine/dungeon";
+import { findEnemyStartPosition, findRoomCenter, generateDungeon } from "../engine/dungeon";
+import { chaseHeroTurn } from "../engine/enemy";
 import { createWorld, playTurn, type World } from "../engine/turn";
 import { findDirectionForKey } from "./keyboardInput";
+import { renderEnemies } from "./renderEnemies";
 import { renderGrid } from "./renderGrid";
 import { renderHero } from "./renderHero";
 
@@ -26,7 +28,9 @@ function createStartingWorld(): World {
   if (startingRoom === undefined) {
     throw new Error("The generated dungeon has no room to start in");
   }
-  return createWorld(grid, findRoomCenter(startingRoom));
+  const enemyStartPosition = findEnemyStartPosition(rooms);
+  const enemies = enemyStartPosition === undefined ? [] : [{ position: enemyStartPosition }];
+  return createWorld(grid, findRoomCenter(startingRoom), undefined, enemies);
 }
 
 function mountGame(): void {
@@ -54,6 +58,7 @@ function mountGame(): void {
   // An arrow function keeps the null check on drawingContext in scope, unlike a hoisted declaration
   const render = (): void => {
     renderGrid(drawingContext, world, TILE_SIZE_IN_PIXELS);
+    renderEnemies(drawingContext, world, TILE_SIZE_IN_PIXELS);
     renderHero(drawingContext, world.hero, TILE_SIZE_IN_PIXELS);
   };
 
@@ -64,7 +69,7 @@ function mountGame(): void {
     }
     // Arrow keys would otherwise scroll the page
     keyboardEvent.preventDefault();
-    const turnResult = playTurn(world, direction, []);
+    const turnResult = playTurn(world, direction, [chaseHeroTurn]);
     if (!turnResult.turnTaken) {
       return;
     }

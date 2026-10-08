@@ -122,6 +122,26 @@ function connectRooms(grid: Grid, rooms: readonly Room[], randomGenerator: Rando
   });
 }
 
+// The first room is where the hero starts, so the farthest room gives the longest approach
+export function findEnemyStartPosition(rooms: readonly Room[]): TilePosition | undefined {
+  const [startingRoom, ...otherRooms] = rooms;
+  if (startingRoom === undefined) {
+    return undefined;
+  }
+  const startingCenter = findRoomCenter(startingRoom);
+  let farthestCenter: TilePosition | undefined;
+  for (const room of otherRooms) {
+    const center = findRoomCenter(room);
+    if (
+      farthestCenter === undefined ||
+      measureManhattanDistance(startingCenter, center) > measureManhattanDistance(startingCenter, farthestCenter)
+    ) {
+      farthestCenter = center;
+    }
+  }
+  return farthestCenter;
+}
+
 export function generateDungeon(options: DungeonOptions): Dungeon {
   const { seed, columnCount, rowCount } = options;
   const randomGenerator = createRandomGenerator(seed);

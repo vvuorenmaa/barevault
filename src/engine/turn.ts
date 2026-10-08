@@ -3,9 +3,14 @@ import { getTile, isInsideGrid, toTileIndex, type Grid, type TilePosition } from
 
 export type Direction = "up" | "down" | "left" | "right";
 
+export interface Enemy {
+  readonly position: TilePosition;
+}
+
 export interface World {
   readonly grid: Grid;
   readonly hero: TilePosition;
+  readonly enemies: readonly Enemy[];
   readonly sightRadius: number;
   // One flag per grid tile, in the same order as the grid's tiles
   readonly visibleTiles: readonly boolean[];
@@ -41,11 +46,13 @@ export function createWorld(
   grid: Grid,
   hero: TilePosition,
   sightRadius: number = DEFAULT_SIGHT_RADIUS,
+  enemies: readonly Enemy[] = [],
 ): World {
   const unseenTiles = grid.tiles.map(() => false);
   return updateVision({
     grid,
     hero,
+    enemies,
     sightRadius,
     visibleTiles: unseenTiles,
     exploredTiles: unseenTiles,
