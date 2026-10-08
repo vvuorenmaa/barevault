@@ -37,9 +37,16 @@ describe("setTile", () => {
     expect(getTile(grid, 2, 0)).toBe("wall");
   });
 
-  it("rejects writes outside the grid", () => {
+  it.each([
+    [3, 0],
+    [-1, 0],
+    [0, 2],
+    [0, -1],
+    [Number.NaN, 0],
+  ])("rejects writes outside the grid (%s, %s) and leaves the grid unchanged", (column, row) => {
     const grid = createGrid(3, 2, "wall");
-    expect(() => setTile(grid, 3, 0, "floor")).toThrow(RangeError);
+    expect(() => setTile(grid, column, row, "floor")).toThrow(RangeError);
+    expect(grid.tiles.every((tile) => tile === "wall")).toBe(true);
   });
 });
 
@@ -71,6 +78,7 @@ describe("getTile", () => {
     [3, 0],
     [0, 2],
     [1.5, 0],
+    [Number.NaN, 0],
   ])("rejects access outside the grid (%s, %s)", (column, row) => {
     const grid = createGrid(3, 2, "floor");
     expect(() => getTile(grid, column, row)).toThrow(RangeError);

@@ -55,17 +55,18 @@ const TILE_KIND_BY_CHARACTER: Readonly<Record<string, TileKind>> = {
 };
 
 export function createGridFromRows(rows: readonly string[]): Grid {
-  const [firstRow] = rows;
+  const characterRows = rows.map((row) => [...row]);
+  const [firstRow] = characterRows;
   if (firstRow === undefined) {
     throw new RangeError("A grid needs at least one row");
   }
-  if (rows.some((row) => row.length !== firstRow.length)) {
+  if (characterRows.some((row) => row.length !== firstRow.length)) {
     throw new RangeError("All grid rows must have the same length");
   }
 
-  const grid = createGrid(firstRow.length, rows.length, "wall");
-  rows.forEach((row, rowIndex) => {
-    [...row].forEach((character, columnIndex) => {
+  const grid = createGrid(firstRow.length, characterRows.length, "wall");
+  characterRows.forEach((row, rowIndex) => {
+    row.forEach((character, columnIndex) => {
       const tile = TILE_KIND_BY_CHARACTER[character];
       if (tile === undefined) {
         throw new RangeError(`Unknown tile character "${character}"`);
