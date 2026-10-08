@@ -1,12 +1,71 @@
 import { describe, expect, it } from "vitest";
 import { createGridFromRows } from "./grid";
-import { createWorld, playTurn, type ActorTurn, type World } from "./turn";
+import {
+  createWorld,
+  isTileExplored,
+  isTileVisible,
+  playTurn,
+  type ActorTurn,
+  type World,
+} from "./turn";
 
 // Hero starts at column 1, row 1
 function createCorridorWorld(): World {
   const grid = createGridFromRows(["####", "#..#", "####"]);
   return createWorld(grid, { column: 1, row: 1 });
 }
+
+describe("what the hero sees", () => {
+  // A long corridor with the hero at its west end and a sight radius of 2
+  function createLongCorridorWorld(): World {
+    const grid = createGridFromRows(["#########", "#.......#", "#########"]);
+    return createWorld(grid, { column: 1, row: 1 }, { sightRadius: 2 });
+  }
+
+  it("starts with only the surroundings of the hero seen", () => {
+    const world = createLongCorridorWorld();
+    expect(isTileVisible(world, 3, 1)).toBe(true);
+    expect(isTileVisible(world, 4, 1)).toBe(false);
+    expect(isTileExplored(world, 3, 1)).toBe(true);
+    expect(isTileExplored(world, 4, 1)).toBe(false);
+  });
+
+  it("updates what is visible after the hero moves", () => {
+    let world = createLongCorridorWorld();
+    for (let step = 0; step < 3; step += 1) {
+      world = playTurn(world, "right", []).world;
+    }
+    expect(isTileVisible(world, 6, 1)).toBe(true);
+    expect(isTileVisible(world, 1, 1)).toBe(false);
+  });
+
+  it("remembers tiles that have gone out of sight", () => {
+    let world = createLongCorridorWorld();
+    for (let step = 0; step < 3; step += 1) {
+      world = playTurn(world, "right", []).world;
+    }
+    expect(isTileVisible(world, 1, 1)).toBe(false);
+    expect(isTileExplored(world, 1, 1)).toBe(true);
+    expect(isTileExplored(world, 8, 1)).toBe(false);
+  });
+
+  it("keeps the previous world's memory untouched", () => {
+    const world = createLongCorridorWorld();
+    playTurn(world, "right", []);
+    expect(isTileExplored(world, 4, 1)).toBe(false);
+  });
+
+  it("rejects an invalid sight radius", () => {
+    const grid = createGridFromRows(["###", "#.#", "###"]);
+    expect(() => createWorld(grid, { column: 1, row: 1 }, { sightRadius: -1 })).toThrow(RangeError);
+    expect(() => createWorld(grid, { column: 1, row: 1 }, { sightRadius: 2.5 })).toThrow(RangeError);
+  });
+
+  it("rejects reading outside the grid", () => {
+    expect(() => isTileVisible(createLongCorridorWorld(), 99, 0)).toThrow(RangeError);
+    expect(() => isTileExplored(createLongCorridorWorld(), 0, 99)).toThrow(RangeError);
+  });
+});
 
 describe("playTurn other actors", () => {
   function createRecordingActor(name: string, log: string[]): ActorTurn {

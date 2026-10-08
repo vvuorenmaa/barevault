@@ -19,6 +19,7 @@ The hero starts a run with nothing (bare start) and descends through generated l
 
 - Single player, turn-based: the hero acts, then every other actor acts. No speed or energy system.
 - Permadeath: death ends the run and a new run starts from scratch.
+- Enemies know where the hero is from anywhere and walk the shortest route toward them; the hero's sight only decides what the player sees. Neither side can step onto the other's tile.
 - Gear comes only from vaults.
 - Vaults are mandatory: the way down is behind them and they cannot be skipped.
 - Levels are generated from a seed, so a seed reproduces a level.
@@ -44,3 +45,4 @@ TypeScript, Vite and Vitest. The roguelike engine (grid, field of view, dungeon 
 - Whether bear form should become a mechanic, and how it would interact with gear.
 - Whether a deeper end goal is wanted once the basic loop works.
 - Where sprites come from.
+- Line of sight uses one Bresenham line per tile, so it is not symmetric (A may see B while B does not see A) and lets sight slip through a diagonal gap between two walls. Fine while only the hero sees; revisit (e.g. shadowcasting) when enemies need to see the hero.

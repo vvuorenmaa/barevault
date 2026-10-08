@@ -38,7 +38,7 @@ export function isInsideGrid(grid: Grid, column: number, row: number): boolean {
   );
 }
 
-function toTileIndex(grid: Grid, column: number, row: number): number {
+export function toTileIndex(grid: Grid, column: number, row: number): number {
   if (!isInsideGrid(grid, column, row)) {
     throw new RangeError(`Tile (${column}, ${row}) is outside the ${grid.columnCount}x${grid.rowCount} grid`);
   }

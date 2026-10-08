@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateDungeon, type Room } from "./dungeon";
+import { findEnemyStartPosition, findRoomCenter, generateDungeon, type Room } from "./dungeon";
 import { getTile, isInsideGrid, type Grid } from "./grid";
 
 const COLUMN_COUNT = 40;
@@ -156,6 +156,40 @@ describe("generateDungeon connectivity", () => {
         expect(getTile(grid, 0, row)).toBe("wall");
         expect(getTile(grid, COLUMN_COUNT - 1, row)).toBe("wall");
       }
+    }
+  });
+});
+
+describe("findEnemyStartPosition", () => {
+  const startingRoom: Room = { column: 1, row: 1, width: 4, height: 4 };
+
+  it("picks the center of the room farthest from the starting room", () => {
+    const nearRoom: Room = { column: 8, row: 1, width: 4, height: 4 };
+    const farRoom: Room = { column: 30, row: 18, width: 4, height: 4 };
+    expect(findEnemyStartPosition([startingRoom, nearRoom, farRoom])).toEqual(findRoomCenter(farRoom));
+  });
+
+  it("has no start position when there is only the starting room", () => {
+    expect(findEnemyStartPosition([startingRoom])).toBeUndefined();
+    expect(findEnemyStartPosition([])).toBeUndefined();
+  });
+
+  it("never puts an enemy in the starting room of a generated dungeon", () => {
+    for (const seed of SEEDS_TO_CHECK) {
+      const { rooms } = generateDungeonForSeed(seed);
+      const [firstRoom] = rooms;
+      const enemyStart = findEnemyStartPosition(rooms);
+      expect(firstRoom).toBeDefined();
+      expect(enemyStart).toBeDefined();
+      if (firstRoom === undefined || enemyStart === undefined) {
+        continue;
+      }
+      const isInsideFirstRoom =
+        enemyStart.column >= firstRoom.column &&
+        enemyStart.column < firstRoom.column + firstRoom.width &&
+        enemyStart.row >= firstRoom.row &&
+        enemyStart.row < firstRoom.row + firstRoom.height;
+      expect(isInsideFirstRoom).toBe(false);
     }
   });
 });
