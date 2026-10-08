@@ -30,7 +30,7 @@ function createStartingWorld(): World {
   }
   const enemyStartPosition = findEnemyStartPosition(rooms);
   const enemies = enemyStartPosition === undefined ? [] : [{ position: enemyStartPosition }];
-  return createWorld(grid, findRoomCenter(startingRoom), undefined, enemies);
+  return createWorld(grid, findRoomCenter(startingRoom), { enemies });
 }
 
 function mountGame(): void {

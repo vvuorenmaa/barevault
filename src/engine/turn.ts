@@ -42,12 +42,13 @@ function updateVision(world: World): World {
   return { ...world, visibleTiles, exploredTiles };
 }
 
-export function createWorld(
-  grid: Grid,
-  hero: TilePosition,
-  sightRadius: number = DEFAULT_SIGHT_RADIUS,
-  enemies: readonly Enemy[] = [],
-): World {
+export interface WorldOptions {
+  readonly sightRadius?: number;
+  readonly enemies?: readonly Enemy[];
+}
+
+export function createWorld(grid: Grid, hero: TilePosition, options: WorldOptions = {}): World {
+  const { sightRadius = DEFAULT_SIGHT_RADIUS, enemies = [] } = options;
   const unseenTiles = grid.tiles.map(() => false);
   return updateVision({
     grid,
@@ -89,7 +90,11 @@ export function playTurn(
     column: world.hero.column + offset.column,
     row: world.hero.row + offset.row,
   };
-  if (!isWalkable(world.grid, destination)) {
+  // Until the hero can attack, an enemy's tile is simply blocked
+  const isOccupiedByEnemy = world.enemies.some(
+    (enemy) => enemy.position.column === destination.column && enemy.position.row === destination.row,
+  );
+  if (!isWalkable(world.grid, destination) || isOccupiedByEnemy) {
     return { world, turnTaken: false };
   }
 

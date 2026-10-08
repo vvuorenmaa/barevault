@@ -50,10 +50,12 @@ describe("findNextStepToward", () => {
     ).toBeUndefined();
   });
 
-  it("is deterministic when several shortest routes exist", () => {
+  it("breaks ties between equally short routes in a fixed order (up, down, left, right)", () => {
     const grid = createGridFromRows(["#####", "#...#", "#...#", "#####"]);
-    const firstAnswer = findNextStepToward(grid, { column: 1, row: 1 }, { column: 3, row: 2 }, []);
-    const secondAnswer = findNextStepToward(grid, { column: 1, row: 1 }, { column: 3, row: 2 }, []);
-    expect(firstAnswer).toEqual(secondAnswer);
+    // Both "right first" and "down first" take 3 steps; down wins because it is tried before right
+    expect(findNextStepToward(grid, { column: 1, row: 1 }, { column: 3, row: 2 }, [])).toEqual({
+      column: 1,
+      row: 2,
+    });
   });
 });

@@ -28,6 +28,10 @@ _Avoid_: Treasure room, boss room, dungeon room
 Equipment the hero obtains in vaults; the only source of equipment in a run.
 _Avoid_: Loot, items, equipment
 
+**Enemy**:
+A hostile creature that hunts the hero through a level.
+_Avoid_: Monster, mob, NPC
+
 **Hero**:
 The player's character, shown as `@`-style figure on the grid.
 _Avoid_: Player character, avatar
