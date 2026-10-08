@@ -2,7 +2,7 @@
 
 A turn-based roguelike for the browser. You start a run with nothing, descend level by level, and equip yourself from the vault that guards each level's exit. Death is permanent.
 
-Status: early planning, no code yet. See [issues](https://github.com/vvuorenmaa/barevault/issues) for the roadmap.
+Status: project scaffold only, the game is not playable yet. See [issues](https://github.com/vvuorenmaa/barevault/issues) for the roadmap.
 
 ## Documentation
 
@@ -17,4 +17,15 @@ TypeScript, Vite and Vitest, with a hand-written roguelike engine and canvas pix
 
 ## Development
 
-Setup, build and test instructions will be added when the project scaffold exists.
+Requires Node 22 (see `.nvmrc`; with nvm run `nvm use`).
+
+```sh
+npm install
+npm run dev        # start the dev server
+npm test           # run the unit tests
+npm run lint       # lint (also enforces that src/engine never imports src/game)
+npm run typecheck  # type-check without emitting
+npm run build      # type-check and build for production into dist/
+```
+
+Source layout: `src/engine` holds generic roguelike mechanics, `src/game` holds BareVault-specific content (see [ADR-0002](docs/adr/0002-engine-and-game-separation.md)).
