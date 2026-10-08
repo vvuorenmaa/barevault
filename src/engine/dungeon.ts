@@ -22,6 +22,7 @@ export interface DungeonOptions {
 const MIN_ROOM_SIZE = 4;
 const MAX_ROOM_SIZE = 10;
 const ROOM_PLACEMENT_ATTEMPTS = 80;
+const HORIZONTAL_FIRST_PROBABILITY = 0.5;
 
 // Rooms keep at least one wall tile between each other, so corridors can later run between them
 function roomsTouchOrOverlap(first: Room, second: Room): boolean {
@@ -99,22 +100,31 @@ function carveCorridor(grid: Grid, from: TilePosition, to: TilePosition, horizon
   carveHorizontalCorridor(grid, to.row, from.column, to.column);
 }
 
+// On equal distances the earliest candidate wins, which keeps generation deterministic
+function findNearestCenter(target: TilePosition, candidates: readonly TilePosition[]): TilePosition | undefined {
+  let nearestCenter: TilePosition | undefined;
+  for (const candidate of candidates) {
+    if (
+      nearestCenter === undefined ||
+      measureManhattanDistance(target, candidate) < measureManhattanDistance(target, nearestCenter)
+    ) {
+      nearestCenter = candidate;
+    }
+  }
+  return nearestCenter;
+}
+
 // Joining each room to the nearest earlier room links all rooms into one connected tree
 function connectRooms(grid: Grid, rooms: readonly Room[], randomGenerator: RandomGenerator): void {
-  for (let roomIndex = 1; roomIndex < rooms.length; roomIndex += 1) {
-    const roomCenter = findRoomCenter(rooms[roomIndex] as Room);
-    let nearestCenter = findRoomCenter(rooms[0] as Room);
-    for (let earlierIndex = 1; earlierIndex < roomIndex; earlierIndex += 1) {
-      const earlierCenter = findRoomCenter(rooms[earlierIndex] as Room);
-      if (
-        measureManhattanDistance(roomCenter, earlierCenter) <
-        measureManhattanDistance(roomCenter, nearestCenter)
-      ) {
-        nearestCenter = earlierCenter;
-      }
+  const roomCenters = rooms.map(findRoomCenter);
+  roomCenters.forEach((roomCenter, roomIndex) => {
+    const nearestEarlierCenter = findNearestCenter(roomCenter, roomCenters.slice(0, roomIndex));
+    if (nearestEarlierCenter === undefined) {
+      return;
     }
-    carveCorridor(grid, roomCenter, nearestCenter, randomGenerator.nextFloat() < 0.5);
-  }
+    const isHorizontalFirst = randomGenerator.nextFloat() < HORIZONTAL_FIRST_PROBABILITY;
+    carveCorridor(grid, roomCenter, nearestEarlierCenter, isHorizontalFirst);
+  });
 }
 
 export function generateDungeon(options: DungeonOptions): Dungeon {

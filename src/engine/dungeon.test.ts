@@ -134,6 +134,7 @@ describe("generateDungeon connectivity", () => {
   it("lets the hero walk from any floor tile to any other", () => {
     for (const seed of SEEDS_TO_CHECK) {
       const { grid, rooms } = generateDungeonForSeed(seed);
+      expect(rooms.length).toBeGreaterThanOrEqual(2);
       const firstRoom = rooms[0];
       expect(firstRoom).toBeDefined();
       if (firstRoom === undefined) {
@@ -156,6 +157,14 @@ describe("generateDungeon connectivity", () => {
         expect(getTile(grid, COLUMN_COUNT - 1, row)).toBe("wall");
       }
     }
+  });
+});
+
+describe("generateDungeon on a grid that fits exactly one room", () => {
+  it("carves only that room and no corridor", () => {
+    const { grid, rooms } = generateDungeon({ seed: "single", columnCount: 6, rowCount: 6 });
+    expect(rooms).toEqual([{ column: 1, row: 1, width: 4, height: 4 }]);
+    expect(grid.tiles.filter((tile) => tile === "floor")).toHaveLength(16);
   });
 });
 
