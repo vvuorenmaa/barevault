@@ -1,3 +1,4 @@
+import { computeFieldOfView } from "./fieldOfView";
 import { getTile, isInsideGrid, type Grid, type TilePosition } from "./grid";
 
 export type Direction = "up" | "down" | "left" | "right";
@@ -5,7 +6,13 @@ export type Direction = "up" | "down" | "left" | "right";
 export interface World {
   readonly grid: Grid;
   readonly hero: TilePosition;
+  readonly sightRadius: number;
+  // One flag per grid tile, in the same order as the grid's tiles
+  readonly visibleTiles: readonly boolean[];
+  readonly exploredTiles: readonly boolean[];
 }
+
+const DEFAULT_SIGHT_RADIUS = 8;
 
 export interface TurnResult {
   readonly world: World;
@@ -19,8 +26,45 @@ const OFFSET_BY_DIRECTION: Readonly<Record<Direction, TilePosition>> = {
   right: { column: 1, row: 0 },
 };
 
-export function createWorld(grid: Grid, hero: TilePosition): World {
-  return { grid, hero };
+function updateVision(world: World): World {
+  const visibleTiles = world.grid.tiles.map(() => false);
+  const exploredTiles = [...world.exploredTiles];
+  for (const { column, row } of computeFieldOfView(world.grid, world.hero, world.sightRadius)) {
+    const tileIndex = row * world.grid.columnCount + column;
+    visibleTiles[tileIndex] = true;
+    exploredTiles[tileIndex] = true;
+  }
+  return { ...world, visibleTiles, exploredTiles };
+}
+
+export function createWorld(
+  grid: Grid,
+  hero: TilePosition,
+  sightRadius: number = DEFAULT_SIGHT_RADIUS,
+): World {
+  const unseenTiles = grid.tiles.map(() => false);
+  return updateVision({
+    grid,
+    hero,
+    sightRadius,
+    visibleTiles: unseenTiles,
+    exploredTiles: unseenTiles,
+  });
+}
+
+function readTileFlag(world: World, flags: readonly boolean[], column: number, row: number): boolean {
+  if (!isInsideGrid(world.grid, column, row)) {
+    throw new RangeError(`Tile (${column}, ${row}) is outside the grid`);
+  }
+  return flags[row * world.grid.columnCount + column] === true;
+}
+
+export function isTileVisible(world: World, column: number, row: number): boolean {
+  return readTileFlag(world, world.visibleTiles, column, row);
+}
+
+export function isTileExplored(world: World, column: number, row: number): boolean {
+  return readTileFlag(world, world.exploredTiles, column, row);
 }
 
 function isWalkable(grid: Grid, position: TilePosition): boolean {
@@ -45,7 +89,7 @@ export function playTurn(
     return { world, turnTaken: false };
   }
 
-  const worldAfterHeroMoved: World = { ...world, hero: destination };
+  const worldAfterHeroMoved = updateVision({ ...world, hero: destination });
   const worldAfterAllActors = otherActors.reduce(
     (currentWorld, takeActorTurn) => takeActorTurn(currentWorld),
     worldAfterHeroMoved,

@@ -53,7 +53,7 @@ function mountGame(): void {
 
   // An arrow function keeps the null check on drawingContext in scope, unlike a hoisted declaration
   const render = (): void => {
-    renderGrid(drawingContext, world.grid, TILE_SIZE_IN_PIXELS);
+    renderGrid(drawingContext, world, TILE_SIZE_IN_PIXELS);
     renderHero(drawingContext, world.hero, TILE_SIZE_IN_PIXELS);
   };
 
