@@ -59,6 +59,64 @@ function carveRoom(grid: Grid, room: Room): void {
   }
 }
 
+interface TilePosition {
+  readonly column: number;
+  readonly row: number;
+}
+
+function findRoomCenter(room: Room): TilePosition {
+  return {
+    column: room.column + Math.floor(room.width / 2),
+    row: room.row + Math.floor(room.height / 2),
+  };
+}
+
+function measureManhattanDistance(from: TilePosition, to: TilePosition): number {
+  return Math.abs(from.column - to.column) + Math.abs(from.row - to.row);
+}
+
+function carveHorizontalCorridor(grid: Grid, row: number, fromColumn: number, toColumn: number): void {
+  for (let column = Math.min(fromColumn, toColumn); column <= Math.max(fromColumn, toColumn); column += 1) {
+    setTile(grid, column, row, "floor");
+  }
+}
+
+function carveVerticalCorridor(grid: Grid, column: number, fromRow: number, toRow: number): void {
+  for (let row = Math.min(fromRow, toRow); row <= Math.max(fromRow, toRow); row += 1) {
+    setTile(grid, column, row, "floor");
+  }
+}
+
+// An L-shaped path between two room centers stays inside their bounding box, so it never
+// reaches the outer tile ring, which belongs to the rooms' margin.
+function carveCorridor(grid: Grid, from: TilePosition, to: TilePosition, horizontalFirst: boolean): void {
+  if (horizontalFirst) {
+    carveHorizontalCorridor(grid, from.row, from.column, to.column);
+    carveVerticalCorridor(grid, to.column, from.row, to.row);
+    return;
+  }
+  carveVerticalCorridor(grid, from.column, from.row, to.row);
+  carveHorizontalCorridor(grid, to.row, from.column, to.column);
+}
+
+// Joining each room to the nearest earlier room links all rooms into one connected tree
+function connectRooms(grid: Grid, rooms: readonly Room[], randomGenerator: RandomGenerator): void {
+  for (let roomIndex = 1; roomIndex < rooms.length; roomIndex += 1) {
+    const roomCenter = findRoomCenter(rooms[roomIndex] as Room);
+    let nearestCenter = findRoomCenter(rooms[0] as Room);
+    for (let earlierIndex = 1; earlierIndex < roomIndex; earlierIndex += 1) {
+      const earlierCenter = findRoomCenter(rooms[earlierIndex] as Room);
+      if (
+        measureManhattanDistance(roomCenter, earlierCenter) <
+        measureManhattanDistance(roomCenter, nearestCenter)
+      ) {
+        nearestCenter = earlierCenter;
+      }
+    }
+    carveCorridor(grid, roomCenter, nearestCenter, randomGenerator.nextFloat() < 0.5);
+  }
+}
+
 export function generateDungeon(options: DungeonOptions): Dungeon {
   const { seed, columnCount, rowCount } = options;
   const randomGenerator = createRandomGenerator(seed);
@@ -76,6 +134,8 @@ export function generateDungeon(options: DungeonOptions): Dungeon {
     rooms.push(candidate);
     carveRoom(grid, candidate);
   }
+
+  connectRooms(grid, rooms, randomGenerator);
 
   return { grid, rooms };
 }

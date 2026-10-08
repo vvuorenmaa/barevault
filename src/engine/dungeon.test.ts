@@ -78,16 +78,82 @@ describe("generateDungeon rooms", () => {
     }
   });
 
-  it("makes exactly the room tiles floor and everything else wall", () => {
+  it("makes every room tile floor and adds corridor floor outside the rooms", () => {
     for (const seed of SEEDS_TO_CHECK) {
       const { grid, rooms } = generateDungeonForSeed(seed);
       expect(grid.columnCount).toBe(COLUMN_COUNT);
       expect(grid.rowCount).toBe(ROW_COUNT);
+      let corridorTileCount = 0;
       for (let row = 0; row < ROW_COUNT; row += 1) {
         for (let column = 0; column < COLUMN_COUNT; column += 1) {
-          const expectedTile = findRoomIndexAt(rooms, column, row) === -1 ? "wall" : "floor";
-          expect(getTile(grid, column, row)).toBe(expectedTile);
+          const isRoomTile = findRoomIndexAt(rooms, column, row) !== -1;
+          const isFloor = getTile(grid, column, row) === "floor";
+          if (isRoomTile) {
+            expect(isFloor).toBe(true);
+          } else if (isFloor) {
+            corridorTileCount += 1;
+          }
         }
+      }
+      expect(corridorTileCount).toBeGreaterThan(0);
+    }
+  });
+});
+
+function countReachableFloorTiles(grid: Grid, startColumn: number, startRow: number): number {
+  const visitedTileKeys = new Set<string>([`${startColumn},${startRow}`]);
+  const pendingTiles: Array<[number, number]> = [[startColumn, startRow]];
+  const orthogonalOffsets: Array<[number, number]> = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+
+  for (let pendingIndex = 0; pendingIndex < pendingTiles.length; pendingIndex += 1) {
+    const [column, row] = pendingTiles[pendingIndex] ?? [startColumn, startRow];
+    for (const [columnOffset, rowOffset] of orthogonalOffsets) {
+      const neighborColumn = column + columnOffset;
+      const neighborRow = row + rowOffset;
+      const neighborKey = `${neighborColumn},${neighborRow}`;
+      if (
+        !isInsideGrid(grid, neighborColumn, neighborRow) ||
+        visitedTileKeys.has(neighborKey) ||
+        getTile(grid, neighborColumn, neighborRow) !== "floor"
+      ) {
+        continue;
+      }
+      visitedTileKeys.add(neighborKey);
+      pendingTiles.push([neighborColumn, neighborRow]);
+    }
+  }
+  return visitedTileKeys.size;
+}
+
+describe("generateDungeon connectivity", () => {
+  it("lets the hero walk from any floor tile to any other", () => {
+    for (const seed of SEEDS_TO_CHECK) {
+      const { grid, rooms } = generateDungeonForSeed(seed);
+      const firstRoom = rooms[0];
+      expect(firstRoom).toBeDefined();
+      if (firstRoom === undefined) {
+        continue;
+      }
+      const totalFloorTiles = grid.tiles.filter((tile) => tile === "floor").length;
+      expect(countReachableFloorTiles(grid, firstRoom.column, firstRoom.row)).toBe(totalFloorTiles);
+    }
+  });
+
+  it("keeps the outer edge of the grid as wall", () => {
+    for (const seed of SEEDS_TO_CHECK) {
+      const { grid } = generateDungeonForSeed(seed);
+      for (let column = 0; column < COLUMN_COUNT; column += 1) {
+        expect(getTile(grid, column, 0)).toBe("wall");
+        expect(getTile(grid, column, ROW_COUNT - 1)).toBe("wall");
+      }
+      for (let row = 0; row < ROW_COUNT; row += 1) {
+        expect(getTile(grid, 0, row)).toBe("wall");
+        expect(getTile(grid, COLUMN_COUNT - 1, row)).toBe("wall");
       }
     }
   });
