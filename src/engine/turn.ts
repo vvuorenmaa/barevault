@@ -3,9 +3,14 @@ import { getTile, isInsideGrid, toTileIndex, type Grid, type TilePosition } from
 
 export type Direction = "up" | "down" | "left" | "right";
 
+export interface Enemy {
+  readonly position: TilePosition;
+}
+
 export interface World {
   readonly grid: Grid;
   readonly hero: TilePosition;
+  readonly enemies: readonly Enemy[];
   readonly sightRadius: number;
   // One flag per grid tile, in the same order as the grid's tiles
   readonly visibleTiles: readonly boolean[];
@@ -37,15 +42,18 @@ function updateVision(world: World): World {
   return { ...world, visibleTiles, exploredTiles };
 }
 
-export function createWorld(
-  grid: Grid,
-  hero: TilePosition,
-  sightRadius: number = DEFAULT_SIGHT_RADIUS,
-): World {
+export interface WorldOptions {
+  readonly sightRadius?: number;
+  readonly enemies?: readonly Enemy[];
+}
+
+export function createWorld(grid: Grid, hero: TilePosition, options: WorldOptions = {}): World {
+  const { sightRadius = DEFAULT_SIGHT_RADIUS, enemies = [] } = options;
   const unseenTiles = grid.tiles.map(() => false);
   return updateVision({
     grid,
     hero,
+    enemies,
     sightRadius,
     visibleTiles: unseenTiles,
     exploredTiles: unseenTiles,
@@ -82,7 +90,11 @@ export function playTurn(
     column: world.hero.column + offset.column,
     row: world.hero.row + offset.row,
   };
-  if (!isWalkable(world.grid, destination)) {
+  // Until the hero can attack, an enemy's tile is simply blocked
+  const isOccupiedByEnemy = world.enemies.some(
+    (enemy) => enemy.position.column === destination.column && enemy.position.row === destination.row,
+  );
+  if (!isWalkable(world.grid, destination) || isOccupiedByEnemy) {
     return { world, turnTaken: false };
   }
 

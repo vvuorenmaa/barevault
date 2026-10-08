@@ -19,6 +19,7 @@ The hero starts a run with nothing (bare start) and descends through generated l
 
 - Single player, turn-based: the hero acts, then every other actor acts. No speed or energy system.
 - Permadeath: death ends the run and a new run starts from scratch.
+- Enemies know where the hero is from anywhere and walk the shortest route toward them; the hero's sight only decides what the player sees. Neither side can step onto the other's tile.
 - Gear comes only from vaults.
 - Vaults are mandatory: the way down is behind them and they cannot be skipped.
 - Levels are generated from a seed, so a seed reproduces a level.

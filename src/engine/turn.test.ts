@@ -19,7 +19,7 @@ describe("what the hero sees", () => {
   // A long corridor with the hero at its west end and a sight radius of 2
   function createLongCorridorWorld(): World {
     const grid = createGridFromRows(["#########", "#.......#", "#########"]);
-    return createWorld(grid, { column: 1, row: 1 }, 2);
+    return createWorld(grid, { column: 1, row: 1 }, { sightRadius: 2 });
   }
 
   it("starts with only the surroundings of the hero seen", () => {
@@ -57,8 +57,8 @@ describe("what the hero sees", () => {
 
   it("rejects an invalid sight radius", () => {
     const grid = createGridFromRows(["###", "#.#", "###"]);
-    expect(() => createWorld(grid, { column: 1, row: 1 }, -1)).toThrow(RangeError);
-    expect(() => createWorld(grid, { column: 1, row: 1 }, 2.5)).toThrow(RangeError);
+    expect(() => createWorld(grid, { column: 1, row: 1 }, { sightRadius: -1 })).toThrow(RangeError);
+    expect(() => createWorld(grid, { column: 1, row: 1 }, { sightRadius: 2.5 })).toThrow(RangeError);
   });
 
   it("rejects reading outside the grid", () => {
