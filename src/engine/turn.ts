@@ -14,10 +14,29 @@ export interface Enemy {
   readonly hasNoticedHero: boolean;
 }
 
+export type GearKind = "weapon" | "armor";
+
+// Gear lying on the map until the hero steps onto it
+export interface GearItem {
+  readonly position: TilePosition;
+  readonly kind: GearKind;
+  readonly strength: number;
+}
+
+// What the hero carries: a bare start is all zeros
+export interface HeroGear {
+  readonly weaponDamageBonus: number;
+  readonly armorProtection: number;
+}
+
+const BARE_HERO_GEAR: HeroGear = { weaponDamageBonus: 0, armorProtection: 0 };
+
 export interface World {
   readonly grid: Grid;
   readonly hero: TilePosition;
   readonly heroHitPoints: number;
+  readonly heroGear: HeroGear;
+  readonly gearItems: readonly GearItem[];
   readonly enemies: readonly Enemy[];
   readonly sightRadius: number;
   // One flag per grid tile, in the same order as the grid's tiles
@@ -61,6 +80,8 @@ export interface WorldOptions {
   readonly sightRadius?: number;
   readonly enemies?: readonly Enemy[];
   readonly heroHitPoints?: number;
+  readonly heroGear?: HeroGear;
+  readonly gearItems?: readonly GearItem[];
 }
 
 export function createWorld(grid: Grid, hero: TilePosition, options: WorldOptions = {}): World {
@@ -68,12 +89,16 @@ export function createWorld(grid: Grid, hero: TilePosition, options: WorldOption
     sightRadius = DEFAULT_SIGHT_RADIUS,
     enemies = [],
     heroHitPoints = HERO_STARTING_HIT_POINTS,
+    heroGear = BARE_HERO_GEAR,
+    gearItems = [],
   } = options;
   const unseenTiles = grid.tiles.map(() => false);
   return updateVision({
     grid,
     hero,
     heroHitPoints,
+    heroGear,
+    gearItems,
     enemies,
     sightRadius,
     visibleTiles: unseenTiles,
@@ -103,10 +128,25 @@ export type ActorTurn = (world: World) => World;
 function attackEnemy(world: World, targetIndex: number): World {
   const survivingEnemies = world.enemies
     .map((enemy, index) =>
-      index === targetIndex ? { ...enemy, hitPoints: enemy.hitPoints - HERO_ATTACK_DAMAGE } : enemy,
+      index === targetIndex ? { ...enemy, hitPoints: enemy.hitPoints - (HERO_ATTACK_DAMAGE + world.heroGear.weaponDamageBonus) } : enemy,
     )
     .filter((enemy) => enemy.hitPoints > 0);
   return { ...world, enemies: survivingEnemies };
+}
+
+// Gear of a kind the hero already carries is replaced, not added to
+function pickUpGearAt(world: World, position: TilePosition): World {
+  const item = world.gearItems.find(
+    (gearItem) => gearItem.position.column === position.column && gearItem.position.row === position.row,
+  );
+  if (item === undefined) {
+    return world;
+  }
+  const heroGear =
+    item.kind === "weapon"
+      ? { ...world.heroGear, weaponDamageBonus: item.strength }
+      : { ...world.heroGear, armorProtection: item.strength };
+  return { ...world, heroGear, gearItems: world.gearItems.filter((gearItem) => gearItem !== item) };
 }
 
 // Returns the world after the hero's own action, or undefined when the action costs no turn
@@ -129,7 +169,7 @@ function performHeroAction(world: World, action: HeroAction): World | undefined 
   if (!isWalkable(world.grid, destination)) {
     return undefined;
   }
-  return updateVision({ ...world, hero: destination });
+  return updateVision(pickUpGearAt({ ...world, hero: destination }, destination));
 }
 
 export function isHeroDead(world: World): boolean {

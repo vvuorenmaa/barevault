@@ -1,4 +1,4 @@
-import { ENEMY_ATTACK_DAMAGE } from "./combat";
+import { ENEMY_ATTACK_DAMAGE, MINIMUM_DAMAGE_TAKEN } from "./combat";
 import type { Grid, TilePosition } from "./grid";
 import { findNextStepToward } from "./pathfinding";
 import type { ActorTurn, Enemy } from "./turn";
@@ -41,7 +41,7 @@ export const enemiesTurn: ActorTurn = (world) => {
       return;
     }
     if (isOrthogonallyAdjacent(enemy.position, world.hero)) {
-      heroHitPoints -= ENEMY_ATTACK_DAMAGE;
+      heroHitPoints -= Math.max(MINIMUM_DAMAGE_TAKEN, ENEMY_ATTACK_DAMAGE - world.heroGear.armorProtection);
       return;
     }
     const otherEnemyPositions = enemiesAfterActing
