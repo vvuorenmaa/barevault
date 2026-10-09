@@ -15,10 +15,19 @@
       canvas {
         image-rendering: pixelated;
       }
+      #hero-status {
+        margin: 8px 0 0;
+        color: #ddd;
+        font: 16px monospace;
+        text-align: center;
+      }
     </style>
   </head>
   <body>
-    <canvas id="game-canvas"></canvas>
+    <main>
+      <canvas id="game-canvas"></canvas>
+      <p id="hero-status" role="status"></p>
+    </main>
     <script type="module" src="/src/game/main.ts"></script>
   </body>
 </html>

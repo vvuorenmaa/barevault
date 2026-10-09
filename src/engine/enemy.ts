@@ -1,9 +1,15 @@
+import { ENEMY_ATTACK_DAMAGE } from "./combat";
 import type { Grid, TilePosition } from "./grid";
 import { findNextStepToward } from "./pathfinding";
 import type { ActorTurn, Enemy } from "./turn";
 
 function isSamePosition(first: TilePosition, second: TilePosition): boolean {
   return first.column === second.column && first.row === second.row;
+}
+
+// Attacks only reach straight up, down, left or right, the same directions the hero moves in
+function isOrthogonallyAdjacent(first: TilePosition, second: TilePosition): boolean {
+  return Math.abs(first.column - second.column) + Math.abs(first.row - second.row) === 1;
 }
 
 // Prefers a route around the other enemies. When they seal the way (a corridor), it falls back to
@@ -24,19 +30,25 @@ function chooseStepTowardHero(
   return isPlainStepFree ? plainStep : undefined;
 }
 
-// Enemies move one at a time so each sees where the others already stand and they never share a tile
-export const chaseHeroTurn: ActorTurn = (world) => {
-  const enemiesAfterMoving: Enemy[] = [...world.enemies];
+// Each enemy either attacks the hero from an adjacent tile or walks toward them. They act one at a
+// time so each sees where the others already stand and they never share a tile.
+export const enemiesTurn: ActorTurn = (world) => {
+  const enemiesAfterActing: Enemy[] = [...world.enemies];
+  let heroHitPoints = world.heroHitPoints;
 
   world.enemies.forEach((enemy, enemyIndex) => {
-    const otherEnemyPositions = enemiesAfterMoving
+    if (isOrthogonallyAdjacent(enemy.position, world.hero)) {
+      heroHitPoints -= ENEMY_ATTACK_DAMAGE;
+      return;
+    }
+    const otherEnemyPositions = enemiesAfterActing
       .filter((_, otherIndex) => otherIndex !== enemyIndex)
       .map((otherEnemy) => otherEnemy.position);
     const nextStep = chooseStepTowardHero(world.grid, enemy, world.hero, otherEnemyPositions);
     if (nextStep !== undefined) {
-      enemiesAfterMoving[enemyIndex] = { ...enemy, position: nextStep };
+      enemiesAfterActing[enemyIndex] = { ...enemy, position: nextStep };
     }
   });
 
-  return { ...world, enemies: enemiesAfterMoving };
+  return { ...world, enemies: enemiesAfterActing, heroHitPoints: Math.max(0, heroHitPoints) };
 };

@@ -2,7 +2,13 @@
 
 A turn-based roguelike for the browser. You start a run with nothing, descend level by level, and equip yourself from the vault that guards each level's exit. Death is permanent.
 
-Status: project scaffold only, the game is not playable yet. See [issues](https://github.com/vvuorenmaa/barevault/issues) for the roadmap.
+Status: early development. You can explore a generated dungeon and fight a single enemy, but there are no vaults, gear or further levels yet. See [issues](https://github.com/vvuorenmaa/barevault/issues) for the roadmap.
+
+## Controls
+
+- Arrow keys: move; moving into an enemy attacks it
+- Space or `.`: wait a turn
+- `?seed=name` in the URL picks the dungeon
 
 ## Documentation
 
