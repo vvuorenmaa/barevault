@@ -47,11 +47,13 @@ function updateVision(world: World): World {
     visibleTiles[tileIndex] = true;
     exploredTiles[tileIndex] = true;
   }
-  const enemies = world.enemies.map((enemy) =>
-    enemy.hasNoticedHero || visibleTiles[toTileIndex(world.grid, enemy.position.column, enemy.position.row)] === true
-      ? { ...enemy, hasNoticedHero: true }
-      : enemy,
-  );
+  const enemies = world.enemies.map((enemy) => {
+    if (enemy.hasNoticedHero) {
+      return enemy;
+    }
+    const isInSight = visibleTiles[toTileIndex(world.grid, enemy.position.column, enemy.position.row)] === true;
+    return isInSight ? { ...enemy, hasNoticedHero: true } : enemy;
+  });
   return { ...world, enemies, visibleTiles, exploredTiles };
 }
 

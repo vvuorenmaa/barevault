@@ -119,6 +119,24 @@ describe("enemies that have not noticed the hero", () => {
     expect(listEnemyPositions(result.world)).toEqual([{ column: 9, row: 1 }]);
   });
 
+  it("stay put just outside the sight radius when the hero does not come closer", () => {
+    const world = createWorldWithEnemyAt({ column: 10, row: 1 }, false);
+    const result = playTurn(world, "wait", [enemiesTurn]);
+    expect(listEnemyPositions(result.world)).toEqual([{ column: 10, row: 1 }]);
+  });
+
+  it("wake at exactly the sight radius", () => {
+    const world = createWorldWithEnemyAt({ column: 9, row: 1 }, false);
+    expect(world.enemies[0]?.hasNoticedHero).toBe(true);
+  });
+
+  it("stay put behind a wall even when within the sight radius", () => {
+    const world = createWorld(createGridFromRows(["#####", "#.#.#", "#####"]), HERO_AT_WEST_END, {
+      enemies: [{ position: { column: 3, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false }],
+    });
+    expect(listEnemyPositions(playTurn(world, "wait", [enemiesTurn]).world)).toEqual([{ column: 3, row: 1 }]);
+  });
+
   it("keep chasing after the hero is out of sight again", () => {
     const world = createWorldWithEnemyAt({ column: 15, row: 1 }, true);
     expect(listEnemyPositions(enemiesTurn(world))).toEqual([{ column: 14, row: 1 }]);
