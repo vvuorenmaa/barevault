@@ -22,6 +22,8 @@ The hero starts a run with nothing (bare start) and descends through generated l
 - Enemies know where the hero is from anywhere and walk the shortest route toward them; the hero's sight only decides what the player sees. Neither side can step onto the other's tile.
 - Gear comes only from vaults.
 - Vaults are mandatory: the way down is behind them and they cannot be skipped.
+- In the first version a vault is the generated room farthest from the hero's starting room, holding two enemies and the level's gear, with the stairs down behind it. Making vaults larger or more elaborate comes later.
+- In the first version the gear is one weapon (adds to the hero's damage) and one piece of armor (reduces damage taken), each a fixed number with no names or rarities. Gear is picked up automatically by stepping onto its tile and takes effect immediately.
 - Levels are generated from a seed, so a seed reproduces a level.
 
 ## Presentation
