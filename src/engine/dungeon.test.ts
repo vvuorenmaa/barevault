@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findEnemyStartPosition, findRoomCenter, generateDungeon, type Room } from "./dungeon";
+import { findVaultEnemyPositions, generateDungeon, type Room } from "./dungeon";
 import { getTile, isInsideGrid, type Grid } from "./grid";
 
 const COLUMN_COUNT = 40;
@@ -160,36 +160,46 @@ describe("generateDungeon connectivity", () => {
   });
 });
 
-describe("findEnemyStartPosition", () => {
+describe("findVaultEnemyPositions", () => {
   const startingRoom: Room = { column: 1, row: 1, width: 4, height: 4 };
+  const nearRoom: Room = { column: 8, row: 1, width: 4, height: 4 };
+  const farRoom: Room = { column: 30, row: 18, width: 4, height: 4 };
 
-  it("picks the center of the room farthest from the starting room", () => {
-    const nearRoom: Room = { column: 8, row: 1, width: 4, height: 4 };
-    const farRoom: Room = { column: 30, row: 18, width: 4, height: 4 };
-    expect(findEnemyStartPosition([startingRoom, nearRoom, farRoom])).toEqual(findRoomCenter(farRoom));
+  it("places two enemies on different tiles inside the room farthest from the starting room", () => {
+    const positions = findVaultEnemyPositions([startingRoom, nearRoom, farRoom]);
+    expect(positions).toHaveLength(2);
+    expect(positions[0]).not.toEqual(positions[1]);
+    for (const position of positions) {
+      expect(isInsideRoom(farRoom, position.column, position.row)).toBe(true);
+    }
   });
 
-  it("has no start position when there is only the starting room", () => {
-    expect(findEnemyStartPosition([startingRoom])).toBeUndefined();
-    expect(findEnemyStartPosition([])).toBeUndefined();
+  it("has no vault enemies when there is only the starting room", () => {
+    expect(findVaultEnemyPositions([startingRoom])).toEqual([]);
+    expect(findVaultEnemyPositions([])).toEqual([]);
   });
 
-  it("never puts an enemy in the starting room of a generated dungeon", () => {
+  it("picks the earlier room when two rooms are equally far", () => {
+    const firstEquallyFarRoom: Room = { column: 20, row: 1, width: 4, height: 4 };
+    const secondEquallyFarRoom: Room = { column: 1, row: 20, width: 4, height: 4 };
+    const positions = findVaultEnemyPositions([startingRoom, firstEquallyFarRoom, secondEquallyFarRoom]);
+    expect(isInsideRoom(firstEquallyFarRoom, positions[0]?.column ?? -1, positions[0]?.row ?? -1)).toBe(true);
+  });
+
+  it("puts two enemies on floor tiles outside the starting room in every generated dungeon", () => {
     for (const seed of SEEDS_TO_CHECK) {
-      const { rooms } = generateDungeonForSeed(seed);
+      const { grid, rooms } = generateDungeonForSeed(seed);
       const [firstRoom] = rooms;
-      const enemyStart = findEnemyStartPosition(rooms);
-      expect(firstRoom).toBeDefined();
-      expect(enemyStart).toBeDefined();
-      if (firstRoom === undefined || enemyStart === undefined) {
-        continue;
+      const positions = findVaultEnemyPositions(rooms);
+      if (firstRoom === undefined) {
+        throw new Error("The generated dungeon has no starting room");
       }
-      const isInsideFirstRoom =
-        enemyStart.column >= firstRoom.column &&
-        enemyStart.column < firstRoom.column + firstRoom.width &&
-        enemyStart.row >= firstRoom.row &&
-        enemyStart.row < firstRoom.row + firstRoom.height;
-      expect(isInsideFirstRoom).toBe(false);
+      expect(positions).toHaveLength(2);
+      expect(positions[0]).not.toEqual(positions[1]);
+      for (const position of positions) {
+        expect(getTile(grid, position.column, position.row)).toBe("floor");
+        expect(isInsideRoom(firstRoom, position.column, position.row)).toBe(false);
+      }
     }
   });
 });
