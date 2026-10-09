@@ -13,7 +13,7 @@ function createWorldWithEnemies(
   enemyPositions: readonly TilePosition[],
 ): World {
   return createWorld(createGridFromRows(rows), hero, {
-    enemies: enemyPositions.map((position) => ({ position, hitPoints: ENEMY_STARTING_HIT_POINTS })),
+    enemies: enemyPositions.map((position) => ({ position, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: true })),
   });
 }
 
@@ -95,5 +95,37 @@ describe("enemies in the turn loop", () => {
     const result = playTurn(world, "up", [enemiesTurn]);
     expect(result.turnTaken).toBe(false);
     expect(listEnemyPositions(result.world)).toEqual([{ column: 7, row: 1 }]);
+  });
+});
+
+describe("enemies that have not noticed the hero", () => {
+  const FAR_CORRIDOR = ["#".repeat(22), `#${".".repeat(20)}#`, "#".repeat(22)];
+
+  function createWorldWithEnemyAt(position: TilePosition, hasNoticedHero: boolean): World {
+    return createWorld(createGridFromRows(FAR_CORRIDOR), HERO_AT_WEST_END, {
+      enemies: [{ position, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero }],
+    });
+  }
+
+  it("stay where they are while out of the hero's sight", () => {
+    const world = createWorldWithEnemyAt({ column: 15, row: 1 }, false);
+    expect(listEnemyPositions(enemiesTurn(world))).toEqual([{ column: 15, row: 1 }]);
+  });
+
+  it("start chasing as soon as the hero sees them", () => {
+    // Sight radius is 8, so the enemy 9 tiles away comes into view when the hero steps right
+    const world = createWorldWithEnemyAt({ column: 10, row: 1 }, false);
+    const result = playTurn(world, "right", [enemiesTurn]);
+    expect(listEnemyPositions(result.world)).toEqual([{ column: 9, row: 1 }]);
+  });
+
+  it("keep chasing after the hero is out of sight again", () => {
+    const world = createWorldWithEnemyAt({ column: 15, row: 1 }, true);
+    expect(listEnemyPositions(enemiesTurn(world))).toEqual([{ column: 14, row: 1 }]);
+  });
+
+  it("notice the hero straight away when already in sight at the start", () => {
+    const world = createWorldWithEnemyAt({ column: 2, row: 1 }, false);
+    expect(world.enemies[0]?.hasNoticedHero).toBe(true);
   });
 });

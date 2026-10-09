@@ -10,6 +10,8 @@ export type HeroAction = Direction | "wait";
 export interface Enemy {
   readonly position: TilePosition;
   readonly hitPoints: number;
+  // Enemies wait in place until the hero comes into their sight; after that they never lose track
+  readonly hasNoticedHero: boolean;
 }
 
 export interface World {
@@ -45,7 +47,12 @@ function updateVision(world: World): World {
     visibleTiles[tileIndex] = true;
     exploredTiles[tileIndex] = true;
   }
-  return { ...world, visibleTiles, exploredTiles };
+  const enemies = world.enemies.map((enemy) =>
+    enemy.hasNoticedHero || visibleTiles[toTileIndex(world.grid, enemy.position.column, enemy.position.row)] === true
+      ? { ...enemy, hasNoticedHero: true }
+      : enemy,
+  );
+  return { ...world, enemies, visibleTiles, exploredTiles };
 }
 
 export interface WorldOptions {

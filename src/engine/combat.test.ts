@@ -16,7 +16,7 @@ function createCorridorWorld(enemyHitPoints: readonly number[], enemyColumns: re
   return createWorld(createGridFromRows(CORRIDOR), HERO_POSITION, {
     enemies: enemyColumns.map((column, index) => ({
       position: { column, row: 1 },
-      hitPoints: enemyHitPoints[index] ?? ENEMY_STARTING_HIT_POINTS,
+      hitPoints: enemyHitPoints[index] ?? ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false,
     })),
   });
 }
@@ -25,7 +25,7 @@ const OPEN_ROOM = ["#####", "#...#", "#...#", "#...#", "#####"];
 
 function createRoomWorld(heroPosition: TilePosition, enemyPositions: readonly TilePosition[]): World {
   return createWorld(createGridFromRows(OPEN_ROOM), heroPosition, {
-    enemies: enemyPositions.map((position) => ({ position, hitPoints: ENEMY_STARTING_HIT_POINTS })),
+    enemies: enemyPositions.map((position) => ({ position, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false })),
   });
 }
 
@@ -65,7 +65,7 @@ describe("enemies attacking", () => {
 
   it("does not strike back when the hero's attack kills it", () => {
     const weakEnemyWorld = createWorld(createGridFromRows(OPEN_ROOM), { column: 2, row: 2 }, {
-      enemies: [{ position: { column: 3, row: 2 }, hitPoints: HERO_ATTACK_DAMAGE }],
+      enemies: [{ position: { column: 3, row: 2 }, hitPoints: HERO_ATTACK_DAMAGE, hasNoticedHero: false }],
     });
     const result = playTurn(weakEnemyWorld, "right", [enemiesTurn]);
     expect(result.world.enemies).toEqual([]);
@@ -96,7 +96,7 @@ describe("a whole fight", () => {
   it("keeps the previous world untouched when the hero attacks", () => {
     const world = createCorridorWorld([ENEMY_STARTING_HIT_POINTS], [2]);
     playTurn(world, "right", [enemiesTurn]);
-    expect(world.enemies).toEqual([{ position: { column: 2, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS }]);
+    expect(world.enemies).toEqual([{ position: { column: 2, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: true }]);
     expect(world.heroHitPoints).toBe(HERO_STARTING_HIT_POINTS);
   });
 });
@@ -105,7 +105,7 @@ describe("the hero dying", () => {
   function createWorldWithHeroHitPoints(heroHitPoints: number): World {
     return createWorld(createGridFromRows(OPEN_ROOM), { column: 2, row: 2 }, {
       heroHitPoints,
-      enemies: [{ position: { column: 3, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS }],
+      enemies: [{ position: { column: 3, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false }],
     });
   }
 
@@ -125,8 +125,8 @@ describe("the hero dying", () => {
     const world = createWorld(createGridFromRows(OPEN_ROOM), { column: 2, row: 2 }, {
       heroHitPoints: 1,
       enemies: [
-        { position: { column: 1, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS },
-        { position: { column: 3, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS },
+        { position: { column: 1, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false },
+        { position: { column: 3, row: 2 }, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false },
       ],
     });
     expect(enemiesTurn(world).heroHitPoints).toBe(0);
@@ -173,7 +173,7 @@ describe("the hero attacking", () => {
     expect(result.turnTaken).toBe(true);
     expect(result.world.hero).toEqual(HERO_POSITION);
     expect(result.world.enemies).toEqual([
-      { position: { column: 2, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS - HERO_ATTACK_DAMAGE },
+      { position: { column: 2, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS - HERO_ATTACK_DAMAGE, hasNoticedHero: true },
     ]);
   });
 
