@@ -42,6 +42,24 @@ describe("gear", () => {
     expect(afterSecond.heroGear.armorProtection).toBe(2);
   });
 
+  it("replaces a carried weapon with the one picked up later", () => {
+    const world = createCorridorWorld([gearAt(2, "weapon", 3), gearAt(3, "weapon", 1)]);
+    const afterBoth = playTurn(playTurn(world, "right", []).world, "right", []).world;
+    expect(afterBoth.heroGear.weaponDamageBonus).toBe(1);
+  });
+
+  it("stays on the map when the hero attacks an enemy standing on it", () => {
+    const enemy = { position: { column: 2, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false };
+    const world = createWorld(createGridFromRows(CORRIDOR), HERO_POSITION, {
+      enemies: [enemy],
+      gearItems: [gearAt(2, "weapon", 2)],
+    });
+    const after = playTurn(world, "right", []).world;
+    expect(after.hero).toEqual(HERO_POSITION);
+    expect(after.heroGear.weaponDamageBonus).toBe(0);
+    expect(after.gearItems).toEqual([gearAt(2, "weapon", 2)]);
+  });
+
   it("makes a weapon-wielding hero kill an enemy in one blow that takes bare hands several", () => {
     const enemy = { position: { column: 3, row: 1 }, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false };
     const bareHanded = createWorld(createGridFromRows(CORRIDOR), { column: 2, row: 1 }, { enemies: [enemy] });
