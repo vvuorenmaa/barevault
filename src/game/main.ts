@@ -1,5 +1,5 @@
 import { calculateCanvasPixelSize } from "../engine/canvasSize";
-import { findEnemyStartPosition, findRoomCenter, generateDungeon } from "../engine/dungeon";
+import { findRoomCenter, findVaultEnemyPositions, generateDungeon } from "../engine/dungeon";
 import { ENEMY_STARTING_HIT_POINTS } from "../engine/combat";
 import { enemiesTurn } from "../engine/enemy";
 import { createWorld, playTurn, type World } from "../engine/turn";
@@ -32,11 +32,11 @@ function createStartingWorld(): World {
   if (startingRoom === undefined) {
     throw new Error("The generated dungeon has no room to start in");
   }
-  const enemyStartPosition = findEnemyStartPosition(rooms);
-  const enemies =
-    enemyStartPosition === undefined
-      ? []
-      : [{ position: enemyStartPosition, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false }];
+  const enemies = findVaultEnemyPositions(rooms).map((position) => ({
+    position,
+    hitPoints: ENEMY_STARTING_HIT_POINTS,
+    hasNoticedHero: false,
+  }));
   const heroStart = findRoomCenter(startingRoom);
   return createWorld(grid, heroStart, { enemies, gearItems: placeStartingGear(grid, heroStart) });
 }

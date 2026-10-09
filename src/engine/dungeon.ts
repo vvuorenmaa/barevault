@@ -123,23 +123,33 @@ function connectRooms(grid: Grid, rooms: readonly Room[], randomGenerator: Rando
 }
 
 // The first room is where the hero starts, so the farthest room gives the longest approach
-export function findEnemyStartPosition(rooms: readonly Room[]): TilePosition | undefined {
+function findVaultRoom(rooms: readonly Room[]): Room | undefined {
   const [startingRoom, ...otherRooms] = rooms;
   if (startingRoom === undefined) {
     return undefined;
   }
   const startingCenter = findRoomCenter(startingRoom);
-  let farthestCenter: TilePosition | undefined;
+  let vaultRoom: Room | undefined;
   for (const room of otherRooms) {
-    const center = findRoomCenter(room);
     if (
-      farthestCenter === undefined ||
-      measureManhattanDistance(startingCenter, center) > measureManhattanDistance(startingCenter, farthestCenter)
+      vaultRoom === undefined ||
+      measureManhattanDistance(startingCenter, findRoomCenter(room)) >
+        measureManhattanDistance(startingCenter, findRoomCenter(vaultRoom))
     ) {
-      farthestCenter = center;
+      vaultRoom = room;
     }
   }
-  return farthestCenter;
+  return vaultRoom;
+}
+
+// Rooms are at least 4 tiles wide, so the tile right of the center is always inside the room
+export function findVaultEnemyPositions(rooms: readonly Room[]): TilePosition[] {
+  const vaultRoom = findVaultRoom(rooms);
+  if (vaultRoom === undefined) {
+    return [];
+  }
+  const center = findRoomCenter(vaultRoom);
+  return [center, { column: center.column + 1, row: center.row }];
 }
 
 export function generateDungeon(options: DungeonOptions): Dungeon {
