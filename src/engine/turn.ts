@@ -127,7 +127,7 @@ export function isHeroDead(world: World): boolean {
   return world.heroHitPoints <= 0;
 }
 
-// A turn is only spent when the hero moves or attacks; bumping into a wall costs nothing,
+// A turn is only spent when the hero moves, attacks or waits; bumping into a wall costs nothing,
 // and once the hero is dead the run is over, so nothing happens any more
 export function playTurn(
   world: World,
