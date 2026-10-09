@@ -84,13 +84,13 @@ describe("a whole fight", () => {
     expect(world.heroHitPoints).toBeLessThan(HERO_STARTING_HIT_POINTS);
   });
 
-  it("is lost by a hero who never fights back", () => {
+  it("is lost by a hero who only waits next to an enemy", () => {
     let world = createCorridorWorld([ENEMY_STARTING_HIT_POINTS], [2]);
     for (let turn = 0; turn < 50 && !isHeroDead(world); turn += 1) {
-      // Running only the enemy phase stands in for a hero who takes hits without answering
-      world = enemiesTurn(world);
+      world = playTurn(world, "wait", [enemiesTurn]).world;
     }
     expect(isHeroDead(world)).toBe(true);
+    expect(world.enemies).toHaveLength(1);
   });
 
   it("keeps the previous world untouched when the hero attacks", () => {
@@ -142,6 +142,27 @@ describe("the hero dying", () => {
   it("still lets the hero act while alive after being hurt", () => {
     const hurtWorld = createWorldWithHeroHitPoints(HERO_STARTING_HIT_POINTS - ENEMY_ATTACK_DAMAGE);
     expect(playTurn(hurtWorld, "left", []).turnTaken).toBe(true);
+  });
+});
+
+describe("the hero waiting", () => {
+  it("uses the turn without moving, so enemies get to act", () => {
+    const world = createRoomWorld({ column: 2, row: 2 }, [{ column: 3, row: 2 }]);
+    const result = playTurn(world, "wait", [enemiesTurn]);
+    expect(result.turnTaken).toBe(true);
+    expect(result.world.hero).toEqual({ column: 2, row: 2 });
+    expect(result.world.heroHitPoints).toBe(HERO_STARTING_HIT_POINTS - ENEMY_ATTACK_DAMAGE);
+  });
+
+  it("lets a distant enemy walk closer", () => {
+    const world = createRoomWorld({ column: 1, row: 1 }, [{ column: 3, row: 1 }]);
+    const result = playTurn(world, "wait", [enemiesTurn]);
+    expect(result.world.enemies.map((enemy) => enemy.position)).toEqual([{ column: 2, row: 1 }]);
+  });
+
+  it("is not possible for a dead hero", () => {
+    const deadWorld = createWorld(createGridFromRows(OPEN_ROOM), { column: 2, row: 2 }, { heroHitPoints: 0 });
+    expect(playTurn(deadWorld, "wait", [enemiesTurn]).turnTaken).toBe(false);
   });
 });
 

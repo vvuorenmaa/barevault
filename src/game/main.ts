@@ -4,7 +4,7 @@ import { ENEMY_STARTING_HIT_POINTS } from "../engine/combat";
 import { enemiesTurn } from "../engine/enemy";
 import { createWorld, playTurn, type World } from "../engine/turn";
 import { describeHeroStatus } from "./heroStatus";
-import { findDirectionForKey } from "./keyboardInput";
+import { findHeroActionForKey } from "./keyboardInput";
 import { renderEnemies } from "./renderEnemies";
 import { renderGrid } from "./renderGrid";
 import { renderHero } from "./renderHero";
@@ -73,13 +73,13 @@ function mountGame(): void {
   };
 
   window.addEventListener("keydown", (keyboardEvent) => {
-    const direction = findDirectionForKey(keyboardEvent);
-    if (direction === undefined) {
+    const heroAction = findHeroActionForKey(keyboardEvent);
+    if (heroAction === undefined) {
       return;
     }
-    // Arrow keys would otherwise scroll the page
+    // Arrow keys and space would otherwise scroll the page
     keyboardEvent.preventDefault();
-    const turnResult = playTurn(world, direction, [enemiesTurn]);
+    const turnResult = playTurn(world, heroAction, [enemiesTurn]);
     if (!turnResult.turnTaken) {
       return;
     }

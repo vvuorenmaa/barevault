@@ -4,6 +4,9 @@ import { getTile, isInsideGrid, toTileIndex, type Grid, type TilePosition } from
 
 export type Direction = "up" | "down" | "left" | "right";
 
+// Waiting spends the turn without moving, so the hero can let enemies come to them
+export type HeroAction = Direction | "wait";
+
 export interface Enemy {
   readonly position: TilePosition;
   readonly hitPoints: number;
@@ -98,8 +101,11 @@ function attackEnemy(world: World, targetIndex: number): World {
 }
 
 // Returns the world after the hero's own action, or undefined when the action costs no turn
-function performHeroAction(world: World, direction: Direction): World | undefined {
-  const offset = OFFSET_BY_DIRECTION[direction];
+function performHeroAction(world: World, action: HeroAction): World | undefined {
+  if (action === "wait") {
+    return world;
+  }
+  const offset = OFFSET_BY_DIRECTION[action];
   const destination: TilePosition = {
     column: world.hero.column + offset.column,
     row: world.hero.row + offset.row,
@@ -125,13 +131,13 @@ export function isHeroDead(world: World): boolean {
 // and once the hero is dead the run is over, so nothing happens any more
 export function playTurn(
   world: World,
-  direction: Direction,
+  action: HeroAction,
   otherActors: readonly ActorTurn[],
 ): TurnResult {
   if (isHeroDead(world)) {
     return { world, turnTaken: false };
   }
-  const worldAfterHeroActed = performHeroAction(world, direction);
+  const worldAfterHeroActed = performHeroAction(world, action);
   if (worldAfterHeroActed === undefined) {
     return { world, turnTaken: false };
   }

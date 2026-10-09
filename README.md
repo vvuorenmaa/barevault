@@ -4,6 +4,12 @@ A turn-based roguelike for the browser. You start a run with nothing, descend le
 
 Status: project scaffold only, the game is not playable yet. See [issues](https://github.com/vvuorenmaa/barevault/issues) for the roadmap.
 
+## Controls
+
+- Arrow keys: move; moving into an enemy attacks it
+- Space or `.`: wait a turn
+- `?seed=name` in the URL picks the dungeon
+
 ## Documentation
 
 - [`docs/design.md`](docs/design.md): concept, rules and scope
