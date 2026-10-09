@@ -179,10 +179,11 @@ describe("findVaultEnemyPositions", () => {
     expect(findVaultEnemyPositions([])).toEqual([]);
   });
 
-  it("gives the same positions for the same rooms", () => {
-    expect(findVaultEnemyPositions([startingRoom, nearRoom, farRoom])).toEqual(
-      findVaultEnemyPositions([startingRoom, nearRoom, farRoom]),
-    );
+  it("picks the earlier room when two rooms are equally far", () => {
+    const firstEquallyFarRoom: Room = { column: 20, row: 1, width: 4, height: 4 };
+    const secondEquallyFarRoom: Room = { column: 1, row: 20, width: 4, height: 4 };
+    const positions = findVaultEnemyPositions([startingRoom, firstEquallyFarRoom, secondEquallyFarRoom]);
+    expect(isInsideRoom(firstEquallyFarRoom, positions[0]?.column ?? -1, positions[0]?.row ?? -1)).toBe(true);
   });
 
   it("puts two enemies on floor tiles outside the starting room in every generated dungeon", () => {
@@ -190,12 +191,14 @@ describe("findVaultEnemyPositions", () => {
       const { grid, rooms } = generateDungeonForSeed(seed);
       const [firstRoom] = rooms;
       const positions = findVaultEnemyPositions(rooms);
-      expect(firstRoom).toBeDefined();
+      if (firstRoom === undefined) {
+        throw new Error("The generated dungeon has no starting room");
+      }
       expect(positions).toHaveLength(2);
       expect(positions[0]).not.toEqual(positions[1]);
       for (const position of positions) {
         expect(getTile(grid, position.column, position.row)).toBe("floor");
-        expect(firstRoom !== undefined && isInsideRoom(firstRoom, position.column, position.row)).toBe(false);
+        expect(isInsideRoom(firstRoom, position.column, position.row)).toBe(false);
       }
     }
   });
