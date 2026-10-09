@@ -34,7 +34,7 @@ function createStartingWorld(): World {
   const enemies =
     enemyStartPosition === undefined
       ? []
-      : [{ position: enemyStartPosition, hitPoints: ENEMY_STARTING_HIT_POINTS }];
+      : [{ position: enemyStartPosition, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false }];
   return createWorld(grid, findRoomCenter(startingRoom), { enemies });
 }
 

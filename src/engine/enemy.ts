@@ -37,6 +37,9 @@ export const enemiesTurn: ActorTurn = (world) => {
   let heroHitPoints = world.heroHitPoints;
 
   world.enemies.forEach((enemy, enemyIndex) => {
+    if (!enemy.hasNoticedHero) {
+      return;
+    }
     if (isOrthogonallyAdjacent(enemy.position, world.hero)) {
       heroHitPoints -= ENEMY_ATTACK_DAMAGE;
       return;
