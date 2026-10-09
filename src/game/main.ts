@@ -3,9 +3,11 @@ import { findEnemyStartPosition, findRoomCenter, generateDungeon } from "../engi
 import { ENEMY_STARTING_HIT_POINTS } from "../engine/combat";
 import { enemiesTurn } from "../engine/enemy";
 import { createWorld, playTurn, type World } from "../engine/turn";
+import { placeStartingGear } from "./gearPlacement";
 import { describeHeroStatus } from "./heroStatus";
 import { findHeroActionForKey } from "./keyboardInput";
 import { renderEnemies } from "./renderEnemies";
+import { renderGear } from "./renderGear";
 import { renderGrid } from "./renderGrid";
 import { renderHero } from "./renderHero";
 
@@ -35,7 +37,8 @@ function createStartingWorld(): World {
     enemyStartPosition === undefined
       ? []
       : [{ position: enemyStartPosition, hitPoints: ENEMY_STARTING_HIT_POINTS, hasNoticedHero: false }];
-  return createWorld(grid, findRoomCenter(startingRoom), { enemies });
+  const heroStart = findRoomCenter(startingRoom);
+  return createWorld(grid, heroStart, { enemies, gearItems: placeStartingGear(grid, heroStart) });
 }
 
 function mountGame(): void {
@@ -67,6 +70,7 @@ function mountGame(): void {
   // An arrow function keeps the null check on drawingContext in scope, unlike a hoisted declaration
   const render = (): void => {
     renderGrid(drawingContext, world, TILE_SIZE_IN_PIXELS);
+    renderGear(drawingContext, world, TILE_SIZE_IN_PIXELS);
     renderEnemies(drawingContext, world, TILE_SIZE_IN_PIXELS);
     renderHero(drawingContext, world.hero, TILE_SIZE_IN_PIXELS);
     heroStatusElement.textContent = describeHeroStatus(world);
